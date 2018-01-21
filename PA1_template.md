@@ -1,9 +1,4 @@
----
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
----
+# Reproducible Research: Peer Assessment 1
 
 ## Introduction
 
@@ -25,23 +20,37 @@ Questions/tasks:
 2. Process/transform the data (if necessary) into a format suitable for your analysis
 
 First load the library's we are going to need.
-```{r message=FALSE, warning=FALSE}
+
+```r
 library(lubridate)
 library(dplyr)
 library(ggplot2)
 ```
 
 To get the data we have to unzip it. This gives us the "activity.csv" file, with all the data.
-```{r echo=TRUE}
+
+```r
 unzip("activity.zip")
 list.files(pattern="*.csv")
 ```
 
+```
+## [1] "activity.csv"
+```
+
 So let's read the data. And convert the date-string to a date.
-```{r echo=TRUE}
+
+```r
 act_data <- read.csv("activity.csv")
 act_data$date <- ymd(act_data$date)
 str(act_data)
+```
+
+```
+## 'data.frame':	17568 obs. of  3 variables:
+##  $ steps   : int  NA NA NA NA NA NA NA NA NA NA ...
+##  $ date    : Date, format: "2012-10-01" "2012-10-01" ...
+##  $ interval: int  0 5 10 15 20 25 30 35 40 45 ...
 ```
 
 ## What is mean total number of steps taken per day?
@@ -52,19 +61,31 @@ Questions/tasks:
 3. Calculate and report the mean and median of the total number of steps taken per day
 
 First calculate the total steps taken per day.
-```{r echo=TRUE}
+
+```r
 stepsperdate <- act_data %>% 
     group_by(date) %>% 
     summarise(totalSteps = sum(steps))
 ```
 
 And then take a look at the histogram, and the median and mean.
-```{r echo=TRUE, warning=FALSE}
+
+```r
 g <- ggplot(data=stepsperdate, aes(stepsperdate$totalSteps)) +
     geom_histogram(binwidth=1000) +
     labs(title ="Total steps per day", x = "Total steps", y = "Count")
 print(g)
+```
+
+![](PA1_template_files/figure-html/unnamed-chunk-5-1.png)<!-- -->
+
+```r
 summary(stepsperdate$totalSteps)
+```
+
+```
+##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+##      41    8841   10765   10766   13294   21194       8
 ```
 
 ## What is the average daily activity pattern?
@@ -74,23 +95,32 @@ Questions/tasks:
 2. Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
 
 So, we have to group the data by interval and calculate the mean for each interval.
-```{r ECHO=TRUE}
+
+```r
 stepsperinterval <- act_data %>% 
     group_by(interval) %>% 
     summarise(meanSteps = mean(steps, na.rm=TRUE))
 ```
 Let's take a look at those intervals.
-```{r echo=TRUE}
+
+```r
 g <- ggplot(data=stepsperinterval, aes(x = stepsperinterval$interval, y = stepsperinterval$meanSteps)) + 
     geom_line() + 
     labs(title ="Steps per interval (mean)", x = "Interval", y = "Steps (mean)")
 print(g)
 ```
 
+![](PA1_template_files/figure-html/unnamed-chunk-7-1.png)<!-- -->
+
 And the interval with the maximum steps is:
-```{r echo=TRUE}
+
+```r
 maxIndex <- which(stepsperinterval$meanSteps == max(stepsperinterval$meanSteps))
 print(stepsperinterval$interval[[maxIndex]])
+```
+
+```
+## [1] 835
 ```
 So, that is 8:35 in the morning.
 
@@ -105,12 +135,18 @@ Note that there are a number of days/intervals where there are missing values (c
 4. Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day. Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?
 
 The number of missing values is:
-```{r echo=TRUE}
+
+```r
 print(sum(is.na(act_data$steps)))
 ```
 
+```
+## [1] 2304
+```
+
 For filling the missing values, I have chosen to replace an NA with the mean of that 5-minute interval.
-```{r echo=TRUE}
+
+```r
 act_data_complete <- act_data
 
 len <- length(act_data_complete$steps)
@@ -123,7 +159,8 @@ for (i in 1:len) {
 ```
 
 Now, look at the histogram, mean and median for the total steps taken per day.
-```{r echo=TRUE}
+
+```r
 stepsperdate <- act_data_complete %>% 
     group_by(date) %>% 
     summarise(totalSteps = sum(steps))
@@ -132,7 +169,17 @@ g <- ggplot(data=stepsperdate, aes(stepsperdate$totalSteps)) +
     geom_histogram(binwidth=1000) +
     labs(title ="Total steps per day", x = "Total steps", y = "Count")
 print(g)
+```
+
+![](PA1_template_files/figure-html/unnamed-chunk-11-1.png)<!-- -->
+
+```r
 summary(stepsperdate$totalSteps)
+```
+
+```
+##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+##      41    9819   10766   10766   12811   21194
 ```
 
 As we can see, that mainly the 1st and 3rd quantile have both shifted to the middle. The minimum, maximum and mean haven't changed. The median has a minimum change (just a change of 1).
@@ -148,7 +195,8 @@ For this part the weekdays()-function may be of some help here. Use the dataset 
 2. Make a panel plot containing a time series plot of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis).
 
 Add column with a factor indicating if the day is a weekday or weekend (note: my laptop is Dutch, so the weekdays are mentioned in Dutch).
-```{r echo=TRUE}
+
+```r
 act_data_complete <- mutate(act_data_complete, dayOfTheWeek = weekdays(date))
 act_data_complete <- mutate(act_data_complete, weekday = "weekday")
 act_data_complete$weekday[which(act_data_complete$dayOfTheWeek == "zaterdag" | act_data_complete$dayOfTheWeek == "zondag")] <- "weekend"
@@ -156,7 +204,8 @@ act_data_complete$weekday <- factor(act_data_complete$weekday)
 ```
 
 Now create the panel plot for weekday and weekend.
-```{r echo=TRUE}
+
+```r
 act_data_weekend <- act_data_complete %>% 
     group_by(weekday, interval) %>% 
     summarise(meanSteps = mean(steps))
@@ -167,5 +216,7 @@ g <- ggplot(act_data_weekend, aes(x = interval, y = meanSteps, group=weekday)) +
     labs(x = "Interval", y = "Number of steps")
 print(g)
 ```
+
+![](PA1_template_files/figure-html/unnamed-chunk-13-1.png)<!-- -->
 
 If we compare both plots, we see that in the weekend the person starts walking a little bit later, and that during the day more steps are taking than on weekdays.
